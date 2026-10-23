@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>¡Práctica de Español!</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#fff8ec; --card:#ffffff; --ink:#2b2231; --muted:#7a6e80;
+    --green:#16a34a; --green-soft:#dcfce7; --red:#dc2626; --red-soft:#fee2e2;
+    --pink:#ec4899; --purple:#7c3aed; --purple-soft:#ede9fe; --yellow:#fbbf24; --line:#eadfce;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:"Baloo 2",system-ui,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;
+    background-image:radial-gradient(circle at 10% 0%,#ffe4f1 0,transparent 35%),radial-gradient(circle at 100% 20%,#e0f2fe 0,transparent 30%);}
+  .wrap{max-width:760px;margin:0 auto;padding:16px 16px 48px}
+  header{text-align:center;padding:8px 0 4px}
+  .flagbar{display:flex;height:8px;border-radius:99px;overflow:hidden;width:120px;margin:0 auto 10px}
+  .flagbar span{flex:1}.flagbar span:nth-child(1){background:var(--green)}.flagbar span:nth-child(2){background:#fff;border:1px solid var(--line)}.flagbar span:nth-child(3){background:var(--red)}
+  h1{font-size:clamp(28px,7vw,42px);margin:0;line-height:1.1;color:var(--purple)}
+  .sub{color:var(--muted);margin:4px 0 0;font-size:17px}
+  nav{display:flex;gap:8px;justify-content:center;margin:18px 0;flex-wrap:wrap}
+  nav button{font:inherit;font-weight:700;font-size:18px;border:3px solid var(--purple);background:#fff;color:var(--purple);
+    padding:8px 18px;border-radius:999px;cursor:pointer}
+  nav button.on{background:var(--purple);color:#fff}
+  .panel{display:none}.panel.on{display:block}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:14px}
+  .chip{font:inherit;font-size:15px;font-weight:700;border:2px solid var(--line);background:#fff;border-radius:999px;padding:4px 12px;cursor:pointer;color:var(--ink)}
+  .chip.on{border-color:var(--pink);background:#fdf2f8;color:var(--pink)}
+  /* flashcard */
+  .scene{perspective:1200px;max-width:520px;margin:0 auto}
+  .fc{position:relative;height:300px;transform-style:preserve-3d;transition:transform .5s;cursor:pointer}
+  .fc.flip{transform:rotateY(180deg)}
+  .face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:24px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center;
+    box-shadow:0 8px 0 rgba(0,0,0,.08);border:3px solid var(--line);background:var(--card)}
+  .face.back{transform:rotateY(180deg);background:var(--purple-soft);border-color:#c4b5fd}
+  .emoji{font-size:64px;line-height:1}
+  .word{font-size:clamp(26px,7vw,38px);font-weight:800;margin-top:10px;line-height:1.15}
+  .hint{color:var(--muted);font-size:15px;margin-top:8px}
+  .tag{position:absolute;top:12px;left:14px;font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+  .say{position:absolute;top:10px;right:12px;font-size:22px;border:none;background:#fff;border-radius:50%;width:42px;height:42px;cursor:pointer;box-shadow:0 2px 0 rgba(0,0,0,.1)}
+  .ctrl{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:16px}
+  .big{font:inherit;font-weight:800;font-size:18px;border:none;border-radius:16px;padding:10px 20px;cursor:pointer;color:#fff;background:var(--purple);box-shadow:0 4px 0 #5b21b6}
+  .big:active{transform:translateY(2px);box-shadow:0 2px 0 #5b21b6}
+  .big.alt{background:#fff;color:var(--purple);border:3px solid var(--purple);box-shadow:none}
+  .big.pink{background:var(--pink);box-shadow:0 4px 0 #be185d}
+  .count{font-weight:700;color:var(--muted);min-width:70px;text-align:center}
+  /* quiz */
+  .box{background:var(--card);border:3px solid var(--line);border-radius:24px;padding:20px;box-shadow:0 8px 0 rgba(0,0,0,.06)}
+  .progress{height:12px;background:#f3eadb;border-radius:99px;overflow:hidden;margin-bottom:14px}
+  .progress div{height:100%;background:linear-gradient(90deg,var(--pink),var(--purple));width:0;transition:width .3s}
+  .qtop{display:flex;justify-content:space-between;color:var(--muted);font-weight:700;margin-bottom:6px}
+  .qemoji{font-size:54px;text-align:center}
+  .qtext{font-size:clamp(22px,5.5vw,28px);font-weight:800;text-align:center;margin:6px 0 16px;line-height:1.2}
+  .opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media (max-width:480px){.opts{grid-template-columns:1fr}}
+  .opt{font:inherit;font-size:19px;font-weight:700;text-align:center;background:#fff;border:3px solid var(--line);border-radius:16px;padding:12px;cursor:pointer;color:var(--ink)}
+  .opt:hover:not(:disabled){border-color:var(--purple)}
+  .opt.good{background:var(--green-soft);border-color:var(--green)}
+  .opt.bad{background:var(--red-soft);border-color:var(--red)}
+  .feedback{text-align:center;font-size:20px;font-weight:800;min-height:34px;margin-top:12px}
+  .feedback.g{color:var(--green)}.feedback.b{color:var(--red)}
+  .center{text-align:center}
+  .stars{font-size:44px;letter-spacing:4px}
+  .score{font-size:48px;font-weight:800;color:var(--purple);margin:0}
+  label.nm{display:block;font-weight:700;margin:6px 0}
+  input[type=text]{font:inherit;font-size:20px;padding:8px 14px;border-radius:14px;border:3px solid var(--line);width:min(280px,100%);text-align:center}
+  table{width:100%;border-collapse:collapse;margin-top:10px;font-size:17px}
+  th,td{padding:8px 6px;border-bottom:2px solid #f3eadb;text-align:left}
+  th{color:var(--muted);font-size:14px;text-transform:uppercase;letter-spacing:.04em}
+  .stat{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:12px 0}
+  .stat div{background:var(--purple-soft);border-radius:16px;padding:10px 16px;min-width:110px;text-align:center}
+  .stat b{display:block;font-size:28px;color:var(--purple)}
+  .miss{background:#fff7ed;border:2px dashed #fdba74;border-radius:16px;padding:10px 14px;margin-top:14px;text-align:left}
+  .miss li{margin:4px 0}
+  .small{font-size:14px;color:var(--muted)}
+  .linkbtn{font:inherit;background:none;border:none;color:var(--red);text-decoration:underline;cursor:pointer;font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="flagbar"><span></span><span></span><span></span></div>
+    <h1>¡Hola, Riya! 🇲🇽</h1>
+    <p class="sub">Unidad 1: México · Lección 1</p>
+  </header>
+
+  <nav>
+    <button id="tabCards" class="on" onclick="show('cards')">🃏 Tarjetas</button>
+    <button id="tabQuiz" onclick="show('quiz')">⭐ Quiz</button>
+    <button id="tabScores" onclick="show('scores')">🏆 Mis puntos</button>
+  </nav>
+
+  <!-- FLASHCARDS -->
+  <section id="cards" class="panel on">
+    <div class="chips" id="chips"></div>
+    <div class="scene">
+      <div class="fc" id="fc" onclick="flip()">
+        <div class="face front">
+          <span class="tag" id="fTag"></span>
+          <button class="say" onclick="event.stopPropagation();speak(cur().es)" aria-label="Listen">🔊</button>
+          <div class="emoji" id="fEmoji"></div>
+          <div class="word" id="fWord"></div>
+          <div class="hint">Tap to flip</div>
+        </div>
+        <div class="face back">
+          <span class="tag">English</span>
+          <div class="emoji" id="bEmoji"></div>
+          <div class="word" id="bWord"></div>
+          <div class="hint" id="bNote"></div>
+        </div>
+      </div>
+    </div>
+    <div class="ctrl">
+      <button class="big alt" onclick="move(-1)" aria-label="Previous">◀</button>
+      <span class="count" id="fCount"></span>
+      <button class="big" onclick="move(1)" aria-label="Next">▶</button>
+    </div>
+    <div class="ctrl">
+      <button class="big alt" onclick="shuffleDeck()">🔀 Mix</button>
+      <button class="big alt" id="dirBtn" onclick="toggleDir()">Show English first</button>
+    </div>
+  </section>
+
+  <!-- QUIZ -->
+  <section id="quiz" class="panel">
+    <div class="box" id="quizStart">
+      <div class="center">
+        <div class="qemoji">🎯</div>
+        <p class="qtext">Ready for the quiz?</p>
+        <label class="nm" for="who">Your name</label>
+        <input type="text" id="who" value="Riya" maxlength="20">
+        <p class="small">15 questions · every try is saved in “Mis puntos”</p>
+        <button class="big pink" onclick="startQuiz()">¡Vamos! 🚀</button>
+      </div>
+    </div>
+    <div class="box" id="quizRun" style="display:none">
+      <div class="progress"><div id="bar"></div></div>
+      <div class="qtop"><span id="qNum"></span><span id="qScore"></span></div>
+      <div class="qemoji" id="qEmoji"></div>
+      <div class="qtext" id="qText"></div>
+      <div class="opts" id="opts"></div>
+      <div class="feedback" id="fb"></div>
+      <div class="center" style="margin-top:8px"><button class="big" id="nextBtn" style="display:none" onclick="nextQ()">Next ▶</button></div>
+    </div>
+    <div class="box center" id="quizDone" style="display:none">
+      <div class="stars" id="stars"></div>
+      <p class="score" id="final"></p>
+      <p class="qtext" id="cheer" style="margin:4px 0"></p>
+      <div id="missed"></div>
+      <div class="ctrl"><button class="big pink" onclick="startQuiz()">Try again 🔁</button><button class="big alt" onclick="show('scores')">🏆 Mis puntos</button></div>
+    </div>
+  </section>
+
+  <!-- SCORES -->
+  <section id="scores" class="panel">
+    <div class="box">
+      <div class="stat" id="stats"></div>
+      <div id="hist"></div>
+      <div class="miss" id="tricky" style="display:none"></div>
+      <p class="center small" style="margin-top:16px">Scores are saved on this device and browser.<br>
+        <button class="linkbtn" onclick="clearScores()">Clear all scores</button></p>
+    </div>
+  </section>
+</div>
+
+<script>
+/* ---------- Vocabulary from the worksheet ---------- */
+const CARDS = [
+  // Saludos y despedidas
+  {t:"Saludos", es:"¡Buenos días!", en:"Good morning!", e:"🌞"},
+  {t:"Saludos", es:"¡Buenas tardes!", en:"Good afternoon!", e:"🌤️"},
+  {t:"Saludos", es:"¡Buenas noches!", en:"Good night! / Good evening!", e:"🌙"},
+  {t:"Saludos", es:"¡Adiós!", en:"Goodbye!", e:"👋"},
+  {t:"Saludos", es:"¡Nos vemos!", en:"See you!", e:"😄"},
+  {t:"Saludos", es:"Yo soy Anna.", en:"I am Anna.", e:"🙋‍♀️"},
+  {t:"Saludos", es:"¿Y tú?", en:"And you?", e:"🫵"},
+  // Personas
+  {t:"Personas", es:"señor", en:"Mr. (sir)", e:"👨", n:"Mr. Gómez = señor Gómez"},
+  {t:"Personas", es:"señora", en:"Mrs. (ma'am)", e:"👩", n:"Mrs. Gómez = señora Gómez"},
+  {t:"Personas", es:"señorita", en:"Miss", e:"👧"},
+  {t:"Personas", es:"mamá", en:"mom", e:"👩‍👧"},
+  {t:"Personas", es:"papá", en:"dad", e:"👨‍👦"},
+  {t:"Personas", es:"padres", en:"parents", e:"👨‍👩‍👧‍👦"},
+  {t:"Personas", es:"niños", en:"children", e:"🧒🧒"},
+  {t:"Personas", es:"niño", en:"boy", e:"👦"},
+  {t:"Personas", es:"niña", en:"girl", e:"👧"},
+  {t:"Personas", es:"amigos", en:"friends", e:"🤝"},
+  // ¿Quién?
+  {t:"¿Quién?", es:"¿Quién es ella?", en:"Who is she?", e:"👩❓"},
+  {t:"¿Quién?", es:"¿Quién es él?", en:"Who is he?", e:"👨❓"},
+  {t:"¿Quién?", es:"¿Quiénes son ellas?", en:"Who are they? (girls)", e:"👭❓"},
+  {t:"¿Quién?", es:"¿Quiénes son ellos?", en:"Who are they? (boys, or boys + girls)", e:"👫❓"},
+  {t:"¿Quién?", es:"Ella es Pilar.", en:"She is Pilar.", e:"👩"},
+  {t:"¿Quién?", es:"Él es Tomás.", en:"He is Tomás.", e:"👦"},
+  {t:"¿Quién?", es:"Ellas son Kathy y Anna.", en:"They are Kathy and Anna.", e:"👭"},
+  // Orden
+  {t:"Orden", es:"primero", en:"first", e:"1️⃣"},
+  {t:"Orden", es:"después", en:"next / after", e:"2️⃣"},
+  {t:"Orden", es:"por último", en:"last / finally", e:"3️⃣"},
+  // Lectura
+  {t:"Lectura", es:"Verdadero", en:"True", e:"✅"},
+  {t:"Lectura", es:"Falso", en:"False", e:"❌"},
+  {t:"Lectura", es:"Yo tengo siete años.", en:"I am seven years old.", e:"7️⃣🎂"},
+  {t:"Lectura", es:"Yo vivo en México.", en:"I live in Mexico.", e:"🏠"},
+  {t:"Lectura", es:"Hoy es el 22 de octubre.", en:"Today is October 22nd.", e:"📅"},
+  // México
+  {t:"México", es:"la Ciudad de México", en:"Mexico City — the capital of Mexico", e:"🏙️"},
+  {t:"México", es:"Los Estados Unidos", en:"The United States (north of Mexico)", e:"🇺🇸"},
+  {t:"México", es:"Guatemala", en:"Guatemala (south of Mexico)", e:"🇬🇹"},
+  {t:"México", es:"Belice", en:"Belize (south of Mexico)", e:"🇧🇿"},
+  {t:"México", es:"el Océano Pacífico", en:"the Pacific Ocean (west of Mexico)", e:"🌊"},
+  {t:"México", es:"el Golfo de México", en:"the Gulf of Mexico (east of Mexico)", e:"🌊"},
+  {t:"México", es:"verde, blanco y rojo", en:"green, white and red — the flag of Mexico", e:"🇲🇽"},
+];
+
+/* ---------- Quiz bank ---------- */
+const Q = [
+  {e:"🌞", q:"How do you say “Good morning!”?", a:"¡Buenos días!", o:["¡Buenas noches!","¡Buenas tardes!","¡Adiós!"]},
+  {e:"🌤️", q:"How do you say “Good afternoon!”?", a:"¡Buenas tardes!", o:["¡Buenos días!","¡Nos vemos!","¡Buenas noches!"]},
+  {e:"🌙", q:"Time for bed! What do you say to mom?", a:"¡Buenas noches, mamá!", o:["¡Buenos días, mamá!","¡Buenas tardes, mamá!","¡Hola, mamá!"]},
+  {e:"👋", q:"What does “¡Adiós!” mean?", a:"Goodbye!", o:["Hello!","See you!","Good night!"]},
+  {e:"😄", q:"What does “¡Nos vemos!” mean?", a:"See you!", o:["Good morning!","Goodbye, children!","Who is he?"]},
+  {e:"👩‍🏫", q:"“Good afternoon, Mrs. Gómez!” in Spanish is…", a:"¡Buenas tardes, señora Gómez!", o:["¡Buenas tardes, señor Gómez!","¡Buenas noches, señora Gómez!","¡Buenos días, señorita Gómez!"]},
+  {e:"🧒🧒", q:"“Goodbye, children!” in Spanish is…", a:"¡Adiós, niños!", o:["¡Adiós, amigos!","¡Nos vemos, padres!","¡Hola, niños!"]},
+  {e:"🙋‍♀️", q:"How do you say “I am Anna. And you?”", a:"Yo soy Anna. ¿Y tú?", o:["Ella es Anna. ¿Y tú?","Yo tengo Anna. ¿Y él?","Yo vivo Anna. ¿Y tú?"]},
+  {e:"👨", q:"“Mr.” in Spanish is…", a:"señor", o:["señora","señorita","niño"]},
+  {e:"👩", q:"“Mrs.” in Spanish is…", a:"señora", o:["señor","señorita","niña"]},
+  {e:"👧", q:"“Miss” in Spanish is…", a:"señorita", o:["señora","señor","mamá"]},
+  {e:"👨‍👩‍👧‍👦", q:"What does “padres” mean?", a:"parents", o:["dads only","friends","children"]},
+  {e:"👩❓", q:"What does “¿Quién es ella?” mean?", a:"Who is she?", o:["Who is he?","Who are they?","Where is she?"]},
+  {e:"👨❓", q:"What does “¿Quién es él?” mean?", a:"Who is he?", o:["Who is she?","Who are you?","Who are they?"]},
+  {e:"👭", q:"Two girls: “¿Quiénes son ellas?” Pick the right answer.", a:"Ellas son Kathy y Anna.", o:["Ella es Kathy y Anna.","Él es Kathy y Anna.","Ellos es Kathy y Anna."]},
+  {e:"👦", q:"Pick the right answer: “¿Quién es él?”", a:"Él es Andrés.", o:["Ella es Andrés.","Ellas son Andrés.","Yo es Andrés."]},
+  {e:"👩", q:"Pick the right answer: “¿Quién es ella?”", a:"Ella es Pilar.", o:["Él es Pilar.","Ellos son Pilar.","Ella son Pilar."]},
+  {e:"🐸", q:"Frog life cycle: the eggs 🥚 come…", a:"primero", o:["después","por último","nunca"]},
+  {e:"🐸", q:"Frog life cycle: the big frog 🐸 comes…", a:"por último", o:["primero","después","hoy"]},
+  {e:"🦋", q:"Butterfly life cycle: the caterpillar 🐛 comes…", a:"después", o:["primero","por último","adiós"]},
+  {e:"1️⃣", q:"What does “primero” mean?", a:"first", o:["next","last","never"]},
+  {e:"3️⃣", q:"What does “por último” mean?", a:"last", o:["first","next","after school"]},
+  {e:"📖", q:"Tomás says “Yo tengo siete años.” How old is he?", a:"7", o:["8","6","17"]},
+  {e:"📖", q:"Anna tiene 8 años. How old is Anna?", a:"8", o:["7","6","18"]},
+  {e:"📖", q:"“Tomás es de Los Estados Unidos.” Tomás lives in Mexico City, so this is…", a:"Falso", o:["Verdadero"]},
+  {e:"📖", q:"“Anna y Charlie visitan México con sus padres.”", a:"Verdadero", o:["Falso"]},
+  {e:"👦", q:"“Charlie es un niño.”", a:"Verdadero", o:["Falso"]},
+  {e:"👧", q:"“Anna es un niño.”", a:"Falso", o:["Verdadero"]},
+  {e:"🏙️", q:"What is the capital of México?", a:"la Ciudad de México", o:["Guatemala","Belice","Los Estados Unidos"]},
+  {e:"🗺️", q:"Which country is NORTH of México?", a:"Los Estados Unidos", o:["Guatemala","Belice","España"]},
+  {e:"🗺️", q:"Which two countries are SOUTH of México?", a:"Guatemala y Belice", o:["Los Estados Unidos y Canadá","España y Perú","Belice y Canadá"]},
+  {e:"🌊", q:"Which ocean is on the west side of México?", a:"el Océano Pacífico", o:["el Golfo de México","el Océano Atlántico","el Mar Rojo"]},
+  {e:"🇲🇽", q:"What colors are on the flag of México?", a:"verde, blanco y rojo", o:["azul, blanco y rojo","verde, amarillo y azul","rojo y amarillo"]},
+  {e:"✅", q:"What does “Verdadero” mean?", a:"True", o:["False","Very good","Green"]},
+];
+const QUIZ_LEN = 15;
+
+/* ---------- helpers ---------- */
+const $ = id => document.getElementById(id);
+const shuffle = a => { a = a.slice(); for (let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function store(k,v){ try{ if(v===undefined) return JSON.parse(localStorage.getItem(k)); localStorage.setItem(k,JSON.stringify(v)); }catch(e){ return null; } }
+
+let voice = null;
+function pickVoice(){ const vs = speechSynthesis.getVoices(); voice = vs.find(v=>/es[-_]MX/i.test(v.lang)) || vs.find(v=>/^es/i.test(v.lang)) || null; }
+if ('speechSynthesis' in window){ pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+function speak(t){ if(!('speechSynthesis' in window)) return; speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t.replace(/[¡!¿?]/g,'')); u.lang='es-MX'; if(voice) u.voice=voice; u.rate=.85; speechSynthesis.speak(u); }
+
+function show(id){
+  for (const p of ['cards','quiz','scores']) $(p).classList.toggle('on', p===id);
+  $('tabCards').classList.toggle('on', id==='cards');
+  $('tabQuiz').classList.toggle('on', id==='quiz');
+  $('tabScores').classList.toggle('on', id==='scores');
+  if (id==='scores') renderScores();
+}
+
+/* ---------- flashcards ---------- */
+const TOPICS = ['Todo', ...new Set(CARDS.map(c=>c.t))];
+let topic = 'Todo', deck = CARDS.slice(), idx = 0, enFirst = false;
+const cur = () => deck[idx];
+
+function renderChips(){
+  $('chips').innerHTML = TOPICS.map(t => `<button class="chip ${t===topic?'on':''}" data-t="${esc(t)}">${esc(t)}</button>`).join('');
+  $('chips').querySelectorAll('.chip').forEach(b => b.onclick = () => { topic=b.dataset.t; deck = CARDS.filter(c=>topic==='Todo'||c.t===topic); idx=0; renderChips(); renderCard(); });
+}
+function renderCard(){
+  const c = cur(); $('fc').classList.remove('flip');
+  const front = enFirst ? c.en : c.es, back = enFirst ? c.es : c.en;
+  setTimeout(()=>{
+    $('fTag').textContent = enFirst ? 'English' : c.t;
+    $('fEmoji').textContent = c.e; $('bEmoji').textContent = c.e;
+    $('fWord').textContent = front; $('bWord').textContent = back;
+    $('bNote').textContent = c.n || '';
+    document.querySelector('.face.back .tag').textContent = enFirst ? 'Español' : 'English';
+  }, 120);
+  $('fCount').textContent = `${idx+1} / ${deck.length}`;
+}
+function flip(){ $('fc').classList.toggle('flip'); if (enFirst && $('fc').classList.contains('flip')) speak(cur().es); }
+function move(d){ idx = (idx + d + deck.length) % deck.length; renderCard(); }
+function shuffleDeck(){ deck = shuffle(deck); idx = 0; renderCard(); }
+function toggleDir(){ enFirst = !enFirst; $('dirBtn').textContent = enFirst ? 'Show Spanish first' : 'Show English first'; renderCard(); }
+document.addEventListener('keydown', e => {
+  if (!$('cards').classList.contains('on')) return;
+  if (e.key==='ArrowRight') move(1); else if (e.key==='ArrowLeft') move(-1); else if (e.key===' '){ e.preventDefault(); flip(); }
+});
+
+/* ---------- quiz ---------- */
+let qs = [], qi = 0, right = 0, misses = [], player = 'Riya';
+function startQuiz(){
+  player = ($('who').value || 'Riya').trim();
+  qs = shuffle(Q).slice(0, QUIZ_LEN); qi = 0; right = 0; misses = [];
+  $('quizStart').style.display='none'; $('quizDone').style.display='none'; $('quizRun').style.display='block';
+  show('quiz'); renderQ();
+}
+function renderQ(){
+  const q = qs[qi];
+  $('bar').style.width = (qi / qs.length * 100) + '%';
+  $('qNum').textContent = `Pregunta ${qi+1} de ${qs.length}`;
+  $('qScore').textContent = `⭐ ${right}`;
+  $('qEmoji').textContent = q.e; $('qText').textContent = q.q;
+  $('fb').textContent = ''; $('fb').className = 'feedback'; $('nextBtn').style.display='none';
+  const opts = q.o.length === 1 ? ['Verdadero','Falso'] : shuffle([q.a, ...q.o]);
+  $('opts').innerHTML = opts.map(o => `<button class="opt">${esc(o)}</button>`).join('');
+  $('opts').querySelectorAll('.opt').forEach(b => b.onclick = () => answer(b, q));
+}
+const YAY = ['¡Muy bien! 🎉','¡Excelente! 🌟','¡Perfecto! 💜','¡Sí! 🙌','¡Fantástico! 🚀'];
+function answer(btn, q){
+  const all = $('opts').querySelectorAll('.opt');
+  all.forEach(b => { b.disabled = true; if (b.textContent === q.a) b.classList.add('good'); });
+  if (btn.textContent === q.a){ right++; $('fb').textContent = YAY[Math.floor(Math.random()*YAY.length)]; $('fb').classList.add('g'); }
+  else { btn.classList.add('bad'); $('fb').textContent = `Oops! The answer is: ${q.a}`; $('fb').classList.add('b'); misses.push(q); }
+  $('qScore').textContent = `⭐ ${right}`;
+  $('nextBtn').textContent = qi === qs.length-1 ? 'See my score 🏁' : 'Next ▶';
+  $('nextBtn').style.display = 'inline-block';
+}
+function nextQ(){ qi++; if (qi < qs.length) renderQ(); else finish(); }
+function finish(){
+  $('bar').style.width = '100%';
+  const pct = Math.round(right / qs.length * 100);
+  const stars = pct >= 90 ? 3 : pct >= 70 ? 2 : pct >= 40 ? 1 : 0;
+  $('quizRun').style.display='none'; $('quizDone').style.display='block';
+  $('stars').textContent = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
+  $('final').textContent = `${right} / ${qs.length}`;
+  $('cheer').textContent = pct===100 ? `¡Perfecto, ${player}! 🏆` : pct>=80 ? `¡Muy bien, ${player}!` : pct>=50 ? `¡Buen trabajo, ${player}! Keep practicing.` : `¡Tú puedes, ${player}! Try the flashcards and go again.`;
+  $('missed').innerHTML = misses.length ? `<div class="miss"><b>Let’s practice these:</b><ul>${misses.map(m=>`<li>${esc(m.q)} → <b>${esc(m.a)}</b></li>`).join('')}</ul></div>` : '';
+  const h = store('es2_history') || [];
+  h.push({name: player, date: new Date().toISOString(), right, total: qs.length, missed: misses.map(m=>m.q)});
+  store('es2_history', h);
+}
+
+/* ---------- scores ---------- */
+function renderScores(){
+  const h = store('es2_history') || [];
+  if (!h.length){
+    $('stats').innerHTML = ''; $('tricky').style.display='none';
+    $('hist').innerHTML = '<div class="center"><div class="qemoji">📝</div><p class="qtext">No quizzes yet!</p><button class="big pink" onclick="show(\'quiz\')">Take the quiz</button></div>';
+    return;
+  }
+  const pcts = h.map(r => Math.round(r.right / r.total * 100));
+  const best = Math.max(...pcts), avg = Math.round(pcts.reduce((a,b)=>a+b,0) / pcts.length);
+  $('stats').innerHTML = `<div><b>${h.length}</b>quizzes</div><div><b>${best}%</b>best</div><div><b>${avg}%</b>average</div><div><b>${pcts[pcts.length-1]}%</b>last</div>`;
+  const fmt = d => new Date(d).toLocaleString([], {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'});
+  $('hist').innerHTML = `<table><thead><tr><th>Date</th><th>Name</th><th>Score</th><th>Stars</th></tr></thead><tbody>${
+    h.slice().reverse().slice(0,25).map(r => { const p = Math.round(r.right/r.total*100); const s = p>=90?3:p>=70?2:p>=40?1:0;
+      return `<tr><td>${fmt(r.date)}</td><td>${esc(r.name||'')}</td><td><b>${r.right}/${r.total}</b> (${p}%)</td><td>${'⭐'.repeat(s)||'—'}</td></tr>`; }).join('')
+  }</tbody></table>`;
+  const cnt = {}; h.forEach(r => (r.missed||[]).forEach(q => cnt[q] = (cnt[q]||0) + 1));
+  const top = Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  if (top.length){
+    const ans = Object.fromEntries(Q.map(q=>[q.q,q.a]));
+    $('tricky').style.display='block';
+    $('tricky').innerHTML = `<b>Tricky ones (missed most often):</b><ul>${top.map(([q,n])=>`<li>${esc(q)} → <b>${esc(ans[q]||'')}</b> <span class="small">(${n}×)</span></li>`).join('')}</ul>`;
+  } else $('tricky').style.display='none';
+}
+function clearScores(){ if (confirm('Delete all saved quiz scores?')){ store('es2_history', []); renderScores(); } }
+
+renderChips(); renderCard();
+</script>
+</body>
+</html>
