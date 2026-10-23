@@ -134,7 +134,7 @@
         <p class="qtext">Ready for the quiz?</p>
         <label class="nm" for="who">Your name</label>
         <input type="text" id="who" value="Riya" maxlength="20">
-        <p class="small">15 questions · every try is saved in “Mis puntos”</p>
+        <p class="small"><span id="qTotal"></span> questions · you can stop any time and your score is still saved in “Mis puntos”</p>
         <button class="big pink" onclick="startQuiz()">¡Vamos! 🚀</button>
       </div>
     </div>
@@ -146,6 +146,7 @@
       <div class="opts" id="opts"></div>
       <div class="feedback" id="fb"></div>
       <div class="center" style="margin-top:8px"><button class="big" id="nextBtn" style="display:none" onclick="nextQ()">Next ▶</button></div>
+      <div class="center" style="margin-top:14px"><button class="linkbtn" style="color:var(--muted)" onclick="stopQuiz()">⏸ Stop &amp; save my score</button></div>
     </div>
     <div class="box center" id="quizDone" style="display:none">
       <div class="stars" id="stars"></div>
@@ -255,7 +256,25 @@ const Q = [
   {e:"🇲🇽", q:"What colors are on the flag of México?", a:"verde, blanco y rojo", o:["azul, blanco y rojo","verde, amarillo y azul","rojo y amarillo"]},
   {e:"✅", q:"What does “Verdadero” mean?", a:"True", o:["False","Very good","Green"]},
 ];
-const QUIZ_LEN = 15;
+
+/* Auto-build two questions (both directions) from every flashcard */
+function cardQuestions(){
+  const out = [];
+  const pool = t => CARDS.filter(c => c.t === t);
+  const pick = (card, key) => {
+    let others = shuffle(pool(card.t).filter(c => c !== card && c[key] !== card[key]));
+    if (others.length < 3) others = others.concat(shuffle(CARDS.filter(c => c.t !== card.t)));
+    return others.slice(0,3).map(c => c[key]);
+  };
+  CARDS.forEach(c => {
+    out.push({e:c.e, q:`What does “${c.es}” mean?`, a:c.en, o:pick(c,'en')});
+    out.push({e:c.e, q:`How do you say “${c.en}” in Spanish?`, a:c.es, o:pick(c,'es')});
+  });
+  return out;
+}
+const QUIZ_LEN = 50;
+const ALLQ = () => { const seen = new Set(); return [...Q, ...cardQuestions()].filter(q => !seen.has(q.q) && seen.add(q.q)); };
+
 
 /* ---------- helpers ---------- */
 const $ = id => document.getElementById(id);
@@ -307,10 +326,10 @@ document.addEventListener('keydown', e => {
 });
 
 /* ---------- quiz ---------- */
-let qs = [], qi = 0, right = 0, misses = [], player = 'Riya';
+let qs = [], qi = 0, right = 0, answered = 0, misses = [], player = 'Riya';
 function startQuiz(){
   player = ($('who').value || 'Riya').trim();
-  qs = shuffle(Q).slice(0, QUIZ_LEN); qi = 0; right = 0; misses = [];
+  qs = shuffle(ALLQ()).slice(0, QUIZ_LEN); qi = 0; right = 0; misses = []; answered = 0;
   $('quizStart').style.display='none'; $('quizDone').style.display='none'; $('quizRun').style.display='block';
   show('quiz'); renderQ();
 }
@@ -328,6 +347,7 @@ function renderQ(){
 const YAY = ['¡Muy bien! 🎉','¡Excelente! 🌟','¡Perfecto! 💜','¡Sí! 🙌','¡Fantástico! 🚀'];
 function answer(btn, q){
   const all = $('opts').querySelectorAll('.opt');
+  answered++;
   all.forEach(b => { b.disabled = true; if (b.textContent === q.a) b.classList.add('good'); });
   if (btn.textContent === q.a){ right++; $('fb').textContent = YAY[Math.floor(Math.random()*YAY.length)]; $('fb').classList.add('g'); }
   else { btn.classList.add('bad'); $('fb').textContent = `Oops! The answer is: ${q.a}`; $('fb').classList.add('b'); misses.push(q); }
@@ -336,17 +356,22 @@ function answer(btn, q){
   $('nextBtn').style.display = 'inline-block';
 }
 function nextQ(){ qi++; if (qi < qs.length) renderQ(); else finish(); }
+function stopQuiz(){
+  if (!answered){ $('quizRun').style.display='none'; $('quizStart').style.display='block'; return; }
+  if (confirm(`Stop now and save ${right} out of ${answered}?`)) finish();
+}
 function finish(){
   $('bar').style.width = '100%';
-  const pct = Math.round(right / qs.length * 100);
+  const total = answered;
+  const pct = Math.round(right / total * 100);
   const stars = pct >= 90 ? 3 : pct >= 70 ? 2 : pct >= 40 ? 1 : 0;
   $('quizRun').style.display='none'; $('quizDone').style.display='block';
   $('stars').textContent = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
-  $('final').textContent = `${right} / ${qs.length}`;
+  $('final').textContent = `${right} / ${total}`;
   $('cheer').textContent = pct===100 ? `¡Perfecto, ${player}! 🏆` : pct>=80 ? `¡Muy bien, ${player}!` : pct>=50 ? `¡Buen trabajo, ${player}! Keep practicing.` : `¡Tú puedes, ${player}! Try the flashcards and go again.`;
   $('missed').innerHTML = misses.length ? `<div class="miss"><b>Let’s practice these:</b><ul>${misses.map(m=>`<li>${esc(m.q)} → <b>${esc(m.a)}</b></li>`).join('')}</ul></div>` : '';
   const h = store('es2_history') || [];
-  h.push({name: player, date: new Date().toISOString(), right, total: qs.length, missed: misses.map(m=>m.q)});
+  h.push({name: player, date: new Date().toISOString(), right, total, of: qs.length, missed: misses.map(m=>m.q)});
   store('es2_history', h);
 }
 
@@ -364,19 +389,19 @@ function renderScores(){
   const fmt = d => new Date(d).toLocaleString([], {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'});
   $('hist').innerHTML = `<table><thead><tr><th>Date</th><th>Name</th><th>Score</th><th>Stars</th></tr></thead><tbody>${
     h.slice().reverse().slice(0,25).map(r => { const p = Math.round(r.right/r.total*100); const s = p>=90?3:p>=70?2:p>=40?1:0;
-      return `<tr><td>${fmt(r.date)}</td><td>${esc(r.name||'')}</td><td><b>${r.right}/${r.total}</b> (${p}%)</td><td>${'⭐'.repeat(s)||'—'}</td></tr>`; }).join('')
+      return `<tr><td>${fmt(r.date)}</td><td>${esc(r.name||'')}</td><td><b>${r.right}/${r.total}</b> (${p}%)${r.of && r.of > r.total ? `<br><span class="small">stopped at ${r.total} of ${r.of}</span>` : ''}</td><td>${'⭐'.repeat(s)||'—'}</td></tr>`; }).join('')
   }</tbody></table>`;
   const cnt = {}; h.forEach(r => (r.missed||[]).forEach(q => cnt[q] = (cnt[q]||0) + 1));
   const top = Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,5);
   if (top.length){
-    const ans = Object.fromEntries(Q.map(q=>[q.q,q.a]));
+    const ans = Object.fromEntries(ALLQ().map(q=>[q.q,q.a]));
     $('tricky').style.display='block';
     $('tricky').innerHTML = `<b>Tricky ones (missed most often):</b><ul>${top.map(([q,n])=>`<li>${esc(q)} → <b>${esc(ans[q]||'')}</b> <span class="small">(${n}×)</span></li>`).join('')}</ul>`;
   } else $('tricky').style.display='none';
 }
 function clearScores(){ if (confirm('Delete all saved quiz scores?')){ store('es2_history', []); renderScores(); } }
 
-renderChips(); renderCard();
+renderChips(); renderCard(); $("qTotal").textContent = Math.min(QUIZ_LEN, ALLQ().length);
 </script>
 </body>
 </html>
